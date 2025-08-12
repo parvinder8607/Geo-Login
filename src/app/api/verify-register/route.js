@@ -28,19 +28,20 @@ export async function POST(req) {
     console.log('Verification result:', verification);
 
     if (verification.verified && verification.registrationInfo) {
-      const { credentialID, credentialPublicKey, counter } = verification.registrationInfo;
-
+      const { id, publicKey, counter, transports } = verification.registrationInfo.credential;
+    
       const newCredential = {
-        credentialID: Buffer.from(credentialID).toString('base64'),
-        credentialPublicKey: Buffer.from(credentialPublicKey).toString('base64'),
+        credentialID: Buffer.from(id).toString('base64'),
+        credentialPublicKey: Buffer.from(publicKey).toString('base64'),
         counter,
-        transports: attestationResponse.response?.transports || ['internal'],
+        transports: transports || ['internal'],
       };
-
+    
       user.credentials = [...(user.credentials || []), newCredential];
       user.current_challenge = null;
       await saveUser(user);
-    } else {
+    }
+     else {
       console.error('Registration not verified. Reason:', verification);
     }
 
