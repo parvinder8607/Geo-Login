@@ -20,19 +20,19 @@ export async function POST(req) {
 
     const verification = await verifyRegistrationResponse({
       response: attestationResponse,
-      expectedChallenge: user.current_challenge, // must match exactly what was generated
+      expectedChallenge: user.current_challenge,
       expectedOrigin,
       expectedRPID: rpID,
     });
 
-    if (verification.verified) {
+    if (verification.verified && verification.registrationInfo) {
       const { credentialID, credentialPublicKey, counter } = verification.registrationInfo;
 
       const newCredential = {
         credentialID: Buffer.from(credentialID).toString('base64'),
         credentialPublicKey: Buffer.from(credentialPublicKey).toString('base64'),
         counter,
-        transports: attestationResponse.response.transports || ['internal'],
+        transports: attestationResponse.response?.transports || ['internal'],
       };
 
       user.credentials = [...(user.credentials || []), newCredential];
