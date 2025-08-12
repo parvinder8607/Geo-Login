@@ -1,0 +1,16 @@
+{
+  "user": {
+    "username": "user",
+    "id": {
+      "type": "Buffer",
+      "data": [
+        117,
+        115,
+        101,
+        114
+      ]
+    },
+    "credentials": [],
+    "currentChallenge": "aGdVqfnrnwTS-fizBn9W_t1xhLgt6sfum6LpBXKZWH0"
+  }
+}
