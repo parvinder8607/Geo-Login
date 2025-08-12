@@ -1,45 +1,53 @@
 import { NextResponse } from 'next/server';
 import { verifyRegistrationResponse } from '@simplewebauthn/server';
-import { userDB } from '@/lib/userDB';
+import { getUser, saveUser } from '@/lib/userDB';
 
 export async function POST(req) {
   try {
-    const { username, attestationResponse } = await req.json();
+    const body = await req.json();
+    const { username, attestationResponse } = body;
+
     if (!username || !attestationResponse) {
-      return NextResponse.json({ message: 'Missing parameters' }, { status: 400 });
+      return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
     }
 
-    const user = userDB.get(username);
+    // Get the user and stored challenge
+    const user = await getUser(username);
     if (!user) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
 
     const rpID = process.env.NEXT_PUBLIC_RP_ID || 'localhost';
-    const expectedOrigin = process.env.NEXT_PUBLIC_ORIGIN || `https://${rpID}`;
 
+    // Verify the registration response
     const verification = await verifyRegistrationResponse({
       response: attestationResponse,
-      expectedChallenge: user.challenge,
-      expectedOrigin,
+      expectedChallenge: user.current_challenge,
+      expectedOrigin: process.env.NEXT_PUBLIC_EXPECTED_ORIGIN || `https://${rpID}`,
       expectedRPID: rpID,
     });
 
     if (verification.verified) {
-      const { credentialPublicKey, credentialID, counter } = verification.registrationInfo;
+      const { credentialID, credentialPublicKey, counter } = verification.registrationInfo;
 
-      user.credentials.push({
-        credentialID,
-        credentialPublicKey,
+      // Save the credential in Supabase
+      const newCredential = {
+        credentialID: Buffer.from(credentialID).toString('base64'),
+        credentialPublicKey: Buffer.from(credentialPublicKey).toString('base64'),
         counter,
-      });
+        transports: attestationResponse.response.transports || ['internal'],
+      };
 
-      userDB.set(username, user);
+      const updatedCreds = [...(user.credentials || []), newCredential];
+      user.credentials = updatedCreds;
+      user.current_challenge = null; // Clear challenge
 
-      return NextResponse.json({ verified: true });
-    } else {
-      return NextResponse.json({ verified: false }, { status: 400 });
+      await saveUser(user);
     }
-  } catch (error) {
-    return NextResponse.json({ message: 'Server error', error: error.message }, { status: 500 });
+
+    return NextResponse.json({ verified: verification.verified });
+  } catch (err) {
+    console.error('Error verifying registration:', err);
+    return NextResponse.json({ message: err.message }, { status: 500 });
   }
 }
