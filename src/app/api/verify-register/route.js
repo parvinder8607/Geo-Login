@@ -25,6 +25,8 @@ export async function POST(req) {
       expectedRPID: rpID,
     });
 
+    console.log('Verification result:', verification);
+
     if (verification.verified && verification.registrationInfo) {
       const { credentialID, credentialPublicKey, counter } = verification.registrationInfo;
 
@@ -37,8 +39,9 @@ export async function POST(req) {
 
       user.credentials = [...(user.credentials || []), newCredential];
       user.current_challenge = null;
-
       await saveUser(user);
+    } else {
+      console.error('Registration not verified. Reason:', verification);
     }
 
     return NextResponse.json({ verified: verification.verified });
