@@ -18,20 +18,27 @@ export async function POST(req) {
 
     const rpID = process.env.NEXT_PUBLIC_RP_ID || 'localhost';
 
+    function base64ToBase64URL(b64) {
+      return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+    
     const allowCredentials = user.credentials.map(cred => ({
-      id: cred.credentialID, // <== convert base64 string to Buffer here
+      id: base64ToBase64URL(cred.credentialID), // ✅ Base64URL string
       type: 'public-key',
       transports: cred.transports || ['internal'],
     }));
-
-    const options = generateAuthenticationOptions({
+    
+    const options = await generateAuthenticationOptions({
       rpID,
       allowCredentials,
       userVerification: 'preferred',
     });
+    
 
     user.current_challenge = options.challenge;
     await saveUser(user);
+
+    
 
     return NextResponse.json(options);
   } catch (err) {
