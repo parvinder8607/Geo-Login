@@ -19,19 +19,12 @@ export async function POST(req) {
     const rpID = process.env.NEXT_PUBLIC_RP_ID || 'localhost';
 
     const allowCredentials = user.credentials.map(cred => ({
-      id: new Uint8Array(Buffer.from(cred.credentialID, 'base64')),
+      id: cred.credentialID, // <== convert base64 string to Buffer here
       type: 'public-key',
       transports: cred.transports || ['internal'],
     }));
 
-    console.log('rpID:', rpID);
-    console.log('allowCredentials:', allowCredentials);
-
-    if (allowCredentials.length === 0) {
-      return NextResponse.json({ message: 'User has no registered credentials' }, { status: 400 });
-    }
-
-    const options = await generateAuthenticationOptions({
+    const options = generateAuthenticationOptions({
       rpID,
       allowCredentials,
       userVerification: 'preferred',
