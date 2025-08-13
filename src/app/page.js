@@ -10,6 +10,11 @@ export default function Home() {
     <section className="w-full h-screen flex flex-col justify-center items-center" >
       <h1 className="text-4xl font-bold">Hello User</h1>
       <p className="text-xl font-light text-gray-300 " >Welcome to my Geo-Login App!</p>
+      <Link href={'/loginPasskey'}>
+      <button className="bg-green-500 text-white px-4 py-2 rounded-md my-4" >
+        Login with Passkey
+      </button>
+      </Link>
 
       <Link href={'/register'}>
       <button className="bg-green-500 text-white px-4 py-2 rounded-md my-4" >
